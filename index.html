@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Receipt Photobooth</title>
+
+  <!-- Pixel/Receipt Font -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'VT323', monospace;
+      background-color: black;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      transition: background-color 0.5s, color 0.5s;
+    }
+
+    body.active-mode {
+      background-color: white;
+      color: black;
+    }
+
+    #screensaver {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      animation: float 4s infinite;
+    }
+
+    @keyframes float {
+      0% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+      100% { transform: translateY(0); }
+    }
+
+    .button {
+      margin-top: 20px;
+      padding: 10px 20px;
+      background-color: white;
+      color: black;
+      font-size: 24px;
+      border: none;
+      cursor: pointer;
+      font-family: 'VT323', monospace;
+    }
+
+    #hiddenBtn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      opacity: 0;
+      display: block;
+    }
+
+    .photobooth-container {
+      display: none;
+      flex-direction: row;
+      align-items: center;
+      gap: 20px;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .photo {
+      width: 100px;
+      height: 75px;
+      background-color: #444;
+      border: 2px dashed #999;
+      object-fit: cover;
+    }
+
+    video {
+      width: 320px;
+      height: 240px;
+      border: 3px solid white;
+    }
+
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    #codeInputPopup {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #222;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      color: white;
+    }
+
+    .countdown {
+      font-size: 24px;
+      margin-top: 10px;
+    }
+
+    #photoStrip {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #choices, #stripPreview {
+      display: flex;
+      gap: 10px;
+      margin: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .chosen {
+      border: 3px solid lime;
+    }
+  </style>
+</head>
+<body class="screensaver-mode">
+
+  <div id="screensaver">
+    <h1>Receipt Photobooth</h1>
+    <button class="button" id="startBtn">Print Receipt</button>
+  </div>
+
+  <button onclick="printCodes()" id="hiddenBtn">Print Codes</button>
+
+  <div id="codeInputPopup">
+    <label for="codeInput">Enter Code:</label><br/>
+    <input type="text" id="codeInput" placeholder="Enter code">
+    <br/><br/>
+    <button class="button" id="confirmBtn">Confirm</button>
+  </div>
+
+  <div class="photobooth-container" id="cameraSection">
+    <div class="column" id="left-column">
+      <img class="photo" id="shot1" />
+      <img class="photo" id="shot2" />
+      <img class="photo" id="shot3" />
+    </div>
+
+    <video id="video" autoplay></video>
+
+    <div class="column" id="right-column">
+      <img class="photo" id="shot4" />
+      <img class="photo" id="shot5" />
+      <img class="photo" id="shot6" />
+    </div>
+  </div>
+
+  <div class="controls countdown" id="countdown">Timer: 0s | Shot: 0/6</div>
+
+  <div id="photoStrip">
+    <h2>Choose 4 Photos to Print</h2>
+    <div id="choices"></div>
+    <div id="stripPreview"></div>
+    <button class="button" id="printBtn">Print Strip</button>
+  </div>
+
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <script>
+    const startBtn = document.getElementById('startBtn');
+    const codePopup = document.getElementById('codeInputPopup');
+    const codeInput = document.getElementById('codeInput');
+    const confirmBtn = document.getElementById('confirmBtn');
+    const countdown = document.getElementById('countdown');
+    const hiddenBtn = document.getElementById('hiddenBtn');
+
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const cameraSection = document.getElementById('cameraSection');
+
+    const shots = [
+      document.getElementById('shot1'),
+      document.getElementById('shot2'),
+      document.getElementById('shot3'),
+      document.getElementById('shot4'),
+      document.getElementById('shot5'),
+      document.getElementById('shot6')
+    ];
+
+    const photoStrip = document.getElementById('photoStrip');
+    const choices = document.getElementById('choices');
+    const stripPreview = document.getElementById('stripPreview');
+    const printBtn = document.getElementById('printBtn');
+
+    const validCodes = ['PRINS', 'TIMS'];
+    while (validCodes.length < 20) {
+      validCodes.push(Math.random().toString(36).substring(2, 8).toUpperCase());
+    }
+
+    let capturedPhotos = [];
+    let chosenPhotos = [];
+    let currentShot = 0;
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'd') hiddenBtn.style.opacity = '1';
+    });
+
+    startBtn.addEventListener('click', () => {
+      document.getElementById('screensaver').style.display = 'none';
+      codePopup.style.display = 'block';
+    });
+
+    confirmBtn.addEventListener('click', async () => {
+      const input = codeInput.value.trim().toUpperCase();
+      if (validCodes.includes(input)) {
+        document.body.classList.add('active-mode');
+        codePopup.style.display = 'none';
+        cameraSection.style.display = 'flex';
+        await startCamera();
+        startSequence();
+      } else {
+        alert('Invalid Code!');
+      }
+    });
+
+    async function startCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+    }
+
+    function capturePhoto() {
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      if (shots[currentShot]) {
+        shots[currentShot].src = dataUrl;
+      }
+      const img = new Image();
+      img.src = dataUrl;
+      capturedPhotos.push(img);
+    }
+
+    function startSequence() {
+      currentShot = 0;
+      let timer = 5;
+      const interval = setInterval(() => {
+        countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot}/6`;
+        timer--;
+
+        if (timer < 0) {
+          capturePhoto();
+          currentShot++;
+          timer = 5;
+        }
+
+        if (currentShot >= 6) {
+          clearInterval(interval);
+          finishShooting();
+        }
+      }, 1000);
+    }
+
+    function finishShooting() {
+      countdown.textContent = 'Done!';
+      video.srcObject.getTracks().forEach(track => track.stop());
+      cameraSection.style.display = 'none';
+      photoStrip.style.display = 'flex';
+
+      capturedPhotos.forEach(img => {
+        const clone = img.cloneNode();
+        clone.classList.add('photo');
+        clone.addEventListener('click', () => {
+          if (chosenPhotos.includes(clone)) {
+            chosenPhotos = chosenPhotos.filter(i => i !== clone);
+            clone.classList.remove('chosen');
+          } else if (chosenPhotos.length < 4) {
+            chosenPhotos.push(clone);
+            clone.classList.add('chosen');
+          }
+          updatePreview();
+        });
+        choices.appendChild(clone);
+      });
+    }
+
+    function updatePreview() {
+      stripPreview.innerHTML = '';
+      chosenPhotos.forEach(img => {
+        const clone = img.cloneNode();
+        clone.classList.remove('chosen');
+        stripPreview.appendChild(clone);
+      });
+    }
+
+    printBtn.addEventListener('click', () => {
+      printPhoto();
+    });
+
+    function printPhoto() {
+      const printWindow = window.open('', '_blank');
+      const style = `
+        <style>
+          body { text-align: center; font-family: 'VT323', monospace; margin: 0; padding: 0; }
+          img { width: 100%; max-width: 240px; display: block; margin: 5px auto; }
+        </style>`;
+      const images = chosenPhotos.map(img => `<img src="${img.src}" />`).join('');
+      printWindow.document.write(`<html><head>${style}</head><body>${images}</body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
+    function printCodes() {
+      const printWindow = window.open('', '_blank');
+      const style = `
+        <style>
+          body { font-family: 'VT323', monospace; padding: 20px; text-align: center; }
+          h2 { margin-bottom: 20px; }
+          ul { list-style: none; padding: 0; }
+          li {
+            margin: 10px 0;
+            font-size: 24px;
+            border: 1px dashed #444;
+            padding: 10px;
+            width: 200px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        </style>`;
+      const codeListHtml = validCodes.map(code => `<li>${code}</li>`).join('');
+      printWindow.document.write(`<html><head>${style}</head><body><h2>Access Codes</h2><ul>${codeListHtml}</ul></body></html>`);
+      printWindow.document.close();
+      printWindow.focus();
+      printWindow.print();
+    }
+
+    window.onload = () => {
+      capturedPhotos = [];
+      chosenPhotos = [];
+    };
+  </script>
+</body>
+</html>
