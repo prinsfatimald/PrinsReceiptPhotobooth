@@ -2,102 +2,117 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Receipt Photobooth</title>
 
-  <!-- Pixel/Receipt Font -->
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128+Text&display=swap" rel="stylesheet" />
 
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
+    /* Basic page styling */
     body {
+      margin: 0;
       font-family: 'VT323', monospace;
-      background-color: black;
-      color: white;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      transition: background-color 0.5s, color 0.5s;
-    }
-
-    body.active-mode {
-      background-color: white;
-      color: black;
-    }
-
-    #screensaver {
+      background: #f0f0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      animation: float 4s infinite;
+      min-height: 100vh;
     }
 
-    @keyframes float {
-      0% { transform: translateY(0); }
-      50% { transform: translateY(-20px); }
-      100% { transform: translateY(0); }
-    }
-
-    .button {
+    /* Barcode-like header styling */
+    .title-barcode {
+      font-family: 'Libre Barcode 128 Text', cursive;
+      font-size: 60px;
       margin-top: 20px;
-      padding: 10px 20px;
-      background-color: white;
-      color: black;
-      font-size: 24px;
-      border: none;
-      cursor: pointer;
-      font-family: 'VT323', monospace;
     }
 
-    #hiddenBtn {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      opacity: 0;
-      display: block;
-    }
-
+    /* Layout for the camera and previews */
     .photobooth-container {
-      display: none;
-      flex-direction: row;
-      align-items: center;
+      display: flex;
       gap: 20px;
+      align-items: flex-start;
+      margin-top: 20px;
     }
 
     .column {
       display: flex;
       flex-direction: column;
+      align-items: center;
       gap: 10px;
     }
 
-    .photo {
-      width: 100px;
-      height: 75px;
-      background-color: #444;
-      border: 2px dashed #999;
-      object-fit: cover;
-    }
-
+    /* Video feed style */
     video {
-      width: 320px;
-      height: 240px;
+      width: 960px;
+      height: 720px;
       border: 3px solid white;
     }
 
-    .controls {
-      margin-top: 20px;
-      text-align: center;
+    /* Styles for individual photo previews */
+    .photo {
+      width: 240px;
     }
 
+    .strip-photo {
+      width: 240px;
+      border: 1px solid #ccc;
+      margin: 5px 0;
+    }
+
+    /* Container for final photo strip 
+    #photo-strip {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: 1rem;
+      background: black;
+      padding: 10px;
+      width: 300px;
+      border: 2px solid #999;
+    }*/
+
+    #photostrip {
+      display: none;
+      align-items: center;
+      margin-left: 1rem;
+      background: white;
+      padding: 10px;
+      height: 180px;
+      border: 2px solid #999;
+    }
+
+    /* Button styling */
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 6px;
+      background-color: #3f51b5;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #303f9f;
+    }
+
+    /* Hidden dev-only button */
+    #hidden-button {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      width: 50px;
+      height: 50px;
+      z-index: 1000;
+      opacity: 0;
+      background: transparent;
+      border: none;
+    }
+
+    /* Code input modal popup */
     #codeInputPopup {
       position: absolute;
       top: 30%;
@@ -110,225 +125,270 @@
       color: white;
     }
 
-    .countdown {
-      font-size: 24px;
-      margin-top: 10px;
+    /* Countdown text styling */
+    #countdown {
+      font-size: 30px;
+      color: #333;
     }
 
-    #photoStrip {
+    /* Photo select hover and active style */
+    .selectable {
+      cursor: pointer;
+      transition: transform 0.2s, border 0.2s;
+    }
+
+    .selectable:hover {
+      transform: scale(1.05);
+    }
+
+    .selected {
+      border: 3px solid #4caf50;
+    }
+
+    #selection-instructions {
+      font-size: 20px;
+      margin-top: 1rem;
+      color: #555;
+    }
+
+    #finalizeBtn {
       display: none;
-      flex-direction: column;
-      align-items: center;
+      background-color: #4caf50;
     }
 
-    #choices, #stripPreview {
-      display: flex;
-      gap: 10px;
-      margin: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
+    #resetBtn {
+      display: none;
+      background-color: #4caf50;
     }
 
-    .chosen {
-      border: 3px solid lime;
+    #printBtn {
+      display: none;
+      background-color: #4caf50;
     }
   </style>
 </head>
-<body class="screensaver-mode">
+<body>
+  <!-- Barcode-style title -->
+  <h1 class="title-barcode">Receipt Photobooth</h1>
 
-  <div id="screensaver">
-    <h1>Receipt Photobooth</h1>
-    <button class="button" id="startBtn">Print Receipt</button>
-  </div>
+  <!-- Countdown timer display -->
+  <div id="countdown">Print Now</div>
 
-  <button onclick="printCodes()" id="hiddenBtn">Print Codes</button>
-
-  <div id="codeInputPopup">
-    <label for="codeInput">Enter Code:</label><br/>
-    <input type="text" id="codeInput" placeholder="Enter code">
-    <br/><br/>
-    <button class="button" id="confirmBtn">Confirm</button>
-  </div>
-
+  <!-- Camera & preview area -->
   <div class="photobooth-container" id="cameraSection">
-    <div class="column" id="left-column">
+    <!-- Left column of captured photos -->
+    <div class="column">
       <img class="photo" id="shot1" />
       <img class="photo" id="shot2" />
       <img class="photo" id="shot3" />
     </div>
 
+    <!-- Live webcam video -->
     <video id="video" autoplay></video>
 
-    <div class="column" id="right-column">
+    <!-- Right column of captured photos -->
+    <div class="column">
       <img class="photo" id="shot4" />
       <img class="photo" id="shot5" />
       <img class="photo" id="shot6" />
     </div>
   </div>
 
-  <div class="controls countdown" id="countdown">Timer: 0s | Shot: 0/6</div>
-
-  <div id="photoStrip">
-    <h2>Choose 4 Photos to Print</h2>
-    <div id="choices"></div>
-    <div id="stripPreview"></div>
-    <button class="button" id="printBtn">Print Strip</button>
+  <!-- Controls: Start, Print -->
+  <div>
+    <button id="startBtn">📸 Print Receipt</button>
+    
   </div>
 
-  <canvas id="canvas" style="display:none;"></canvas>
+  <!-- Photo selection instructions -->
+  <div id="selection-instructions"></div>
+  <button onclick="printPhoto()" id="printBtn">🖨️ Print</button>
+  <!-- Output strip for selected photos -->
+  <div id="photostrip"></div>
+  <button id="finalizeBtn">✅ Finalize Strip</button>
+
+
+  <!-- Hidden developer tool for testing codes -->
+  <button id="hidden-button" onclick="printCodes()">Print Codes</button>
+
+  <!-- Popup for entering secret code to begin -->
+  <div id="codeInputPopup">
+    <label for="codeInput">Enter Code to Start:</label><br/>
+    <input type="text" id="codeInput" placeholder="Enter code" /><br/><br/>
+    <button id="confirmBtn">Confirm</button>
+  </div>
 
   <script>
-    const startBtn = document.getElementById('startBtn');
+    // Grab key DOM elements
+    const video = document.getElementById('video');
+    const photoStrip = document.getElementById('photostrip');
     const codePopup = document.getElementById('codeInputPopup');
     const codeInput = document.getElementById('codeInput');
+    const startBtn = document.getElementById('startBtn');
     const confirmBtn = document.getElementById('confirmBtn');
     const countdown = document.getElementById('countdown');
-    const hiddenBtn = document.getElementById('hiddenBtn');
-
-    const video = document.getElementById('video');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
     const cameraSection = document.getElementById('cameraSection');
 
-    const shots = [
-      document.getElementById('shot1'),
-      document.getElementById('shot2'),
-      document.getElementById('shot3'),
-      document.getElementById('shot4'),
-      document.getElementById('shot5'),
-      document.getElementById('shot6')
-    ];
+    // Canvas for snapshot capture
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
 
-    const photoStrip = document.getElementById('photoStrip');
-    const choices = document.getElementById('choices');
-    const stripPreview = document.getElementById('stripPreview');
-    const printBtn = document.getElementById('printBtn');
+    // DOM references for each photo slot
+    const shots = Array.from({ length: 6 }, (_, i) => document.getElementById(`shot${i + 1}`));
 
+    // Allowed access codes
     const validCodes = ['PRINS', 'TIMS'];
+
+    // State variables
+    let currentShot = 0;
+    let capturedPhotos = [];
+    let selectedPhotos = [];
+
+    // Add random access codes for dev use
     while (validCodes.length < 20) {
       validCodes.push(Math.random().toString(36).substring(2, 8).toUpperCase());
     }
 
-    let capturedPhotos = [];
-    let chosenPhotos = [];
-    let currentShot = 0;
-
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'd') hiddenBtn.style.opacity = '1';
-    });
-
+    // Show code input popup
     startBtn.addEventListener('click', () => {
-      document.getElementById('screensaver').style.display = 'none';
       codePopup.style.display = 'block';
     });
 
+    // Validate access code and begin
     confirmBtn.addEventListener('click', async () => {
       const input = codeInput.value.trim().toUpperCase();
       if (validCodes.includes(input)) {
-        document.body.classList.add('active-mode');
         codePopup.style.display = 'none';
         cameraSection.style.display = 'flex';
-        await startCamera();
-        startSequence();
+        startPhotoSequence();
       } else {
         alert('Invalid Code!');
       }
     });
 
-    async function startCamera() {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      video.srcObject = stream;
+    // Start webcam on page load
+    window.onload = async function initCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        video.srcObject = stream;
+      } catch (err) {
+        alert('Camera not accessible: ' + err.message);
+      }
+    };
+
+    // Take 6 photos on a 2-second timer
+    function startPhotoSequence() {
+      document.getElementById('startBtn').style.display = 'none';
+      currentShot = 0;
+      capturedPhotos = [];
+      let timer = 2;
+
+      const interval = setInterval(() => {
+        countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot + 1}/6`;
+        if (timer === 0) {
+          takePhoto();
+          currentShot++;
+          timer = 2;
+        } else {
+          timer--;
+        }
+
+        if (currentShot >= 6) {
+          clearInterval(interval);
+          endPhotoSession();
+        }
+      }, 1000);
     }
 
-    function capturePhoto() {
+    // Capture current frame from webcam
+    function takePhoto() {
+
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL('image/png');
+
+      // Preview photo
       if (shots[currentShot]) {
         shots[currentShot].src = dataUrl;
       }
+
+      // Save copy for selection
       const img = new Image();
       img.src = dataUrl;
       capturedPhotos.push(img);
     }
 
-    function startSequence() {
-      currentShot = 0;
-      let timer = 5;
-      const interval = setInterval(() => {
-        countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot}/6`;
-        timer--;
+    // End session and show photo selection
+    function endPhotoSession() {
+      countdown.textContent = 'Click to select your 4 favorite photos';
+      const tracks = video.srcObject?.getTracks();
+      if (tracks) tracks.forEach(track => track.stop());
 
-        if (timer < 0) {
-          capturePhoto();
-          currentShot++;
-          timer = 5;
-        }
-
-        if (currentShot >= 6) {
-          clearInterval(interval);
-          finishShooting();
-        }
-      }, 1000);
-    }
-
-    function finishShooting() {
-      countdown.textContent = 'Done!';
-      video.srcObject.getTracks().forEach(track => track.stop());
       cameraSection.style.display = 'none';
       photoStrip.style.display = 'flex';
+      photoStrip.innerHTML = '';
+      selectedPhotos = [];
 
-      capturedPhotos.forEach(img => {
-        const clone = img.cloneNode();
-        clone.classList.add('photo');
-        clone.addEventListener('click', () => {
-          if (chosenPhotos.includes(clone)) {
-            chosenPhotos = chosenPhotos.filter(i => i !== clone);
-            clone.classList.remove('chosen');
-          } else if (chosenPhotos.length < 4) {
-            chosenPhotos.push(clone);
-            clone.classList.add('chosen');
-          }
-          updatePreview();
-        });
-        choices.appendChild(clone);
+      // Add clickable preview images
+      capturedPhotos.forEach((photo) => {
+        const clone = photo.cloneNode();
+        clone.classList.add('strip-photo', 'selectable');
+        clone.addEventListener('click', () => toggleSelectPhoto(clone));
+        photoStrip.appendChild(clone);
       });
+
+      document.getElementById('selection-instructions').style.display = 'block';
+      document.getElementById('finalizeBtn').style.display = 'inline-block';
+      document.getElementById('resetBtn').style.display = 'inline-block';
     }
 
-    function updatePreview() {
-      stripPreview.innerHTML = '';
-      chosenPhotos.forEach(img => {
-        const clone = img.cloneNode();
-        clone.classList.remove('chosen');
-        stripPreview.appendChild(clone);
-      });
+    // Toggle photo selection
+    function toggleSelectPhoto(photo) {
+      if (selectedPhotos.includes(photo)) {
+        selectedPhotos = selectedPhotos.filter(p => p !== photo);
+        photo.classList.remove('selected');
+      } else {
+        if (selectedPhotos.length >= 4) {
+          alert('You can only select 4 photos.');
+          return;
+        }
+        selectedPhotos.push(photo);
+        photo.classList.add('selected');
+      }
     }
 
-    printBtn.addEventListener('click', () => {
-      printPhoto();
+    // Finalize selection and show printable strip
+    document.getElementById('finalizeBtn').addEventListener('click', () => {
+      countdown.textContent = 'Print your Receipt';
+      if (selectedPhotos.length !== 4) {
+        alert('Please select exactly 4 photos.');
+        return;
+      }
+
+      photoStrip.innerHTML = '';
+      photoStrip.style.display = 'flex';
+      photoStrip.style.flexDirection = 'column';
+      photoStrip.style.width = '240px';
+      photoStrip.style.height = '800px';
+      selectedPhotos.forEach(photo => {
+        const clone = photo.cloneNode();
+        clone.classList.remove('selectable', 'selected');
+        clone.classList.add('strip-photo');
+        photoStrip.appendChild(clone);
+      });
+
+      document.getElementById('selection-instructions').style.display = 'none';
+      document.getElementById('finalizeBtn').style.display = 'none';
+      document.getElementById('printBtn').style.display = 'inline-block';
     });
 
-    function printPhoto() {
-      const printWindow = window.open('', '_blank');
-      const style = `
-        <style>
-          body { text-align: center; font-family: 'VT323', monospace; margin: 0; padding: 0; }
-          img { width: 100%; max-width: 240px; display: block; margin: 5px auto; }
-        </style>`;
-      const images = chosenPhotos.map(img => `<img src="${img.src}" />`).join('');
-      printWindow.document.write(`<html><head>${style}</head><body>${images}</body></html>`);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-    }
-
+    // Developer: print all valid codes
     function printCodes() {
       const printWindow = window.open('', '_blank');
-      const style = `
+      const styles = `
         <style>
-          body { font-family: 'VT323', monospace; padding: 20px; text-align: center; }
-          h2 { margin-bottom: 20px; }
+          body { font-family: monospace; text-align: center; padding: 20px; }
           ul { list-style: none; padding: 0; }
           li {
             margin: 10px 0;
@@ -336,21 +396,32 @@
             border: 1px dashed #444;
             padding: 10px;
             width: 200px;
-            margin-left: auto;
-            margin-right: auto;
+            margin: 0 auto;
           }
         </style>`;
-      const codeListHtml = validCodes.map(code => `<li>${code}</li>`).join('');
-      printWindow.document.write(`<html><head>${style}</head><body><h2>Access Codes</h2><ul>${codeListHtml}</ul></body></html>`);
+      const codesHtml = validCodes.map(code => `<li>${code}</li>`).join('');
+      printWindow.document.write(`<html><head>${styles}</head><body><h2>Access Codes</h2><ul>${codesHtml}</ul></body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+    }
+
+    // Print selected photos as a receipt
+    function printPhoto() {
+      const printWindow = window.open('', '_blank');
+      const style = `
+        <style>
+          body { text-align: center; font-family: sans-serif; }
+          img { width: 240px; margin: 10px auto; display: block; background: black; border: 1px solid #ccc; }
+        </style>`;
+      const images = Array.from(photoStrip.querySelectorAll('img'))
+        .map(img => `<img src="${img.src}" />`)
+        .join('');
+      printWindow.document.write(`<html><head>${style}</head><body>${images}</body></html>`);
       printWindow.document.close();
       printWindow.focus();
       printWindow.print();
     }
 
-    window.onload = () => {
-      capturedPhotos = [];
-      chosenPhotos = [];
-    };
   </script>
 </body>
 </html>
