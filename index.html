@@ -1,22 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Meta Configuration -->
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Receipt Photobooth</title>
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128+Text&display=swap" rel="stylesheet" />
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128+Text&display=swap" rel="stylesheet">
 
+  <!-- Embedded CSS Styling -->
   <style>
-    /* Reset and Base */
+    /* Reset and Base Styles */
     *, *::before, *::after {
       box-sizing: border-box;
       margin: 0;
       padding: 0;
     }
 
+    /* Default Theme Styles */
     body {
       font-family: 'VT323', monospace;
       background-color: black;
@@ -29,12 +32,13 @@
       transition: background-color 0.5s, color 0.5s;
     }
 
+    /* Light Mode Toggle */
     body.active-mode {
       background-color: white;
       color: black;
     }
 
-    /* Screensaver */
+    /* Screensaver Styling */
     #screensaver {
       display: flex;
       flex-direction: column;
@@ -49,31 +53,43 @@
       50% { transform: translateY(-20px); }
     }
 
-    .title-barcode {
-      font-family: 'Libre Barcode 128 Text', cursive;
-      font-size: 60px;
+    /* Buttons */
+    .button {
       margin-top: 20px;
+      padding: 10px 20px;
+      background-color: white;
+      color: black;
+      font-size: 24px;
+      border: none;
+      cursor: pointer;
+      font-family: 'VT323', monospace;
     }
 
-    #prp {
-      width: 500px;
-      height: auto;
-      margin-bottom: 20px;
+    /* Hidden Developer Shortcut Button */
+    #hiddenBtn {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      opacity: 0;
     }
 
-    /* Photobooth */
+    /* Camera Photobooth Layout */
     .photobooth-container {
       display: none;
+      flex-direction: row;
+      align-items: center;
       gap: 20px;
-      align-items: flex-start;
-      margin-top: 20px;
     }
 
     .column {
       display: flex;
       flex-direction: column;
-      align-items: center;
       gap: 10px;
+    }
+
+    .photo {
+      width: 240px;
+      height: 180px;
     }
 
     video {
@@ -82,115 +98,117 @@
       border: 3px solid white;
     }
 
-    .photo {
-      width: 240px;
-      height: 180px;
+    /* Countdown Timer */
+    .controls {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 24px;
     }
 
-    .strip-photo {
-      width: 220px;
-      border: 1px solid #ccc;
-      margin: 5px 0;
-    }
-
-    #photostrip {
-      display: none;
-      align-items: center;
-      margin-left: 1rem;
-      background: white;
-      padding: 10px;
-      height: 220px;
-      border: 2px solid #999;
-    }
-
-    /* Buttons */
-    button {
-      padding: 10px 20px;
-      margin: 10px 5px;
-      font-size: 1rem;
-      border: none;
-      border-radius: 6px;
-      background-color: #3f51b5;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #303f9f;
-    }
-
-    #finalizeBtn, #resetBtn, #printBtn {
-      display: none;
-      background-color: #4caf50;
-    }
-
-    #hidden-button {
-      position: absolute;
-      bottom: 10px;
-      left: 10px;
-      width: 50px;
-      height: 50px;
-      z-index: 1000;
-      opacity: 0;
-      background: transparent;
-      border: none;
-    }
-
-    /* Popup */
+    /* Code Entry Popup Styling */
     #codeInputPopup {
-      position: absolute;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: fixed;
+      width: 500px;
       top: 30%;
       left: 50%;
       transform: translateX(-50%);
       background: #222;
       padding: 20px;
       border-radius: 10px;
-      display: none;
       color: white;
     }
 
-    /* Countdown */
+    #codeInput {
+      width: 100%;
+      padding: 10px;
+      font-size: 18px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 5px;
+    }
+
+    /* Photo Strip Display */
+    #photoStrip {
+      display: none;
+      align-items: center;
+      margin-left: 1rem;
+      background: white;
+      padding: 10px;
+      height: 240px;
+      border: 2px solid #999;
+    }
+
+    #choices, #stripPreview {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .chosen {
+      border: 3px solid green;
+    }
+
+    /* Barcode Title Styling */
+    .title-barcode {
+      font-family: 'Libre Barcode 128 Text', cursive;
+      font-size: 100px;
+      margin-top: 20px;
+    }
+
+    #title-barcode1 {
+      font-family: 'Libre Barcode 128 Text', cursive;
+      font-size: 80px;
+      margin-top: 10px;
+      display: none;
+    }
+
+
+    /* Countdown Display */
     #countdown {
       display: none;
       font-size: 30px;
-      color: #333;
     }
 
-    /* Selection */
-    .selectable {
-      cursor: pointer;
-      transition: transform 0.2s, border 0.2s;
-    }
-
-    .selectable:hover {
-      transform: scale(1.05);
-    }
-
-    .selected {
-      border: 3px solid #4caf50;
-    }
-
-    #selection-instructions {
-      font-size: 20px;
-      margin-top: 1rem;
-      color: #555;
+    /* PRP Logo */
+    #prp {
+      width: 500px;
+      height: auto;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 <body>
 
-  <!-- Screensaver -->
+  <!-- Screensaver Section -->
   <div id="screensaver">
     <h1 class="title-barcode">Receipt Photobooth</h1>
     <p>Designed & Programmed by: Prins Fatima L. Dimasangkay</p>
     <img src="prp.png" alt="" id="prp">
-    <button id="startBtn">📸 Print Photo Receipt</button>
+    <button class="button" id="startBtn">START</button>
   </div>
 
-  <!-- Countdown -->
-  <div id="countdown">Print Now</div>
+  <!-- Hidden Button to Print Developer Codes -->
+  <button id="hiddenBtn" onclick="printCodes()">Print Codes</button>
 
-  <!-- Photobooth -->
+  <!-- Code Input Popup -->
+  <div id="codeInputPopup">
+    <label for="codeInput">Enter Code to Start:</label><br/>
+    <input type="text" id="codeInput" placeholder="Valid Code Only"><br/>
+    <button class="button" id="confirmBtn">CONFIRM</button>
+  </div>
+
+  <!-- Hidden Title for Camera Mode -->
+  <h1 id="title-barcode1">Receipt Photobooth</h1>
+
+  <!-- Countdown Timer -->
+  <div class="controls" id="countdown">Timer: 0s | Shot: 0/6</div>
+
+  <!-- Photobooth Camera and Preview Slots -->
   <div class="photobooth-container" id="cameraSection">
     <div class="column">
       <img class="photo" id="shot1" />
@@ -205,84 +223,96 @@
     </div>
   </div>
 
-  <div id="selection-instructions"></div>
-  <div id="photostrip"></div>
-
-  <button id="printBtn" onclick="printPhoto()">🖨️ Print</button>
-  <button id="finalizeBtn">✅ Finalize Strip</button>
-  <button id="hidden-button" onclick="printCodes()">Print Codes</button>
-
-  <!-- Code Popup -->
-  <div id="codeInputPopup">
-    <label for="codeInput">Enter Code to Start:</label><br/>
-    <input type="text" id="codeInput" placeholder="Enter code" /><br/><br/>
-    <button id="confirmBtn">Confirm</button>
+  <!-- Photo Selection + Print Area -->
+  <div id="photoStrip">
+    <div id="choices"></div>
+    <div id="stripPreview"></div>
+      <button id="printBtn" class="button">🖨️ Print</button>
   </div>
 
+
+
+  <!-- Canvas Element for Capturing Shots -->
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <!-- JavaScript Logic -->
   <script>
-    const video = document.getElementById('video');
-    const photoStrip = document.getElementById('photostrip');
-    const codePopup = document.getElementById('codeInputPopup');
-    const codeInput = document.getElementById('codeInput');
+    // === Element References ===
     const startBtn = document.getElementById('startBtn');
     const confirmBtn = document.getElementById('confirmBtn');
-    const countdown = document.getElementById('countdown');
-    const cameraSection = document.getElementById('cameraSection');
-    const shots = Array.from({ length: 6 }, (_, i) => document.getElementById(`shot${i + 1}`));
-
-    const canvas = document.createElement('canvas');
+    const hiddenBtn = document.getElementById('hiddenBtn');
+    const codePopup = document.getElementById('codeInputPopup');
+    const codeInput = document.getElementById('codeInput');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
+    const cameraSection = document.getElementById('cameraSection');
+    const countdown = document.getElementById('countdown');
+    const titleBarcode1 = document.getElementById('title-barcode1');
+    const photoStrip = document.getElementById('photoStrip');
+    const choices = document.getElementById('choices');
+    const stripPreview = document.getElementById('stripPreview');
+    const printBtn = document.getElementById('printBtn');
 
+    const shots = Array.from({ length: 6 }, (_, i) => document.getElementById(`shot${i + 1}`));
     const validCodes = ['PRINS', 'TIMS'];
+
+    // === Generate Additional Random Access Codes ===
     while (validCodes.length < 20) {
       validCodes.push(Math.random().toString(36).substring(2, 8).toUpperCase());
     }
 
-    let currentShot = 0;
+    // === State Variables ===
     let capturedPhotos = [];
-    let selectedPhotos = [];
+    let chosenPhotos = [];
+    let currentShot = 0;
 
+    // === Developer Shortcut Key (Press "D") ===
+    document.addEventListener('keydown', e => {
+      if (e.key.toLowerCase() === 'd') hiddenBtn.style.opacity = '1';
+    });
+
+    // === Show Code Input Popup on Start Button Click ===
     startBtn.addEventListener('click', () => {
       document.getElementById('screensaver').style.display = 'none';
       codePopup.style.display = 'block';
     });
 
+    // === Confirm and Validate Code ===
     confirmBtn.addEventListener('click', async () => {
       const input = codeInput.value.trim().toUpperCase();
       if (validCodes.includes(input)) {
         document.body.classList.add('active-mode');
         codePopup.style.display = 'none';
         cameraSection.style.display = 'flex';
+        await startCamera();
         startPhotoSequence();
         countdown.style.display = 'block';
+        titleBarcode1.style.display = 'block';
       } else {
         alert('Invalid Code!');
       }
     });
 
-    window.onload = async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        video.srcObject = stream;
-      } catch (err) {
-        alert('Camera not accessible: ' + err.message);
-      }
-    };
+    // === Start Camera Access ===
+    async function startCamera() {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      video.srcObject = stream;
+    }
 
+    // === Start Taking Photos Automatically ===
     function startPhotoSequence() {
-      document.getElementById('startBtn').style.display = 'none';
       currentShot = 0;
-      capturedPhotos = [];
-      let timer = 2;
+      let timer = 1;
 
       const interval = setInterval(() => {
-        countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot + 1}/6`;
-        if (timer === 0) {
+        countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot}/6`;
+        timer--;
+
+        if (timer < 0) {
           takePhoto();
           currentShot++;
-          timer = 2;
-        } else {
-          timer--;
+          timer = 1;
         }
 
         if (currentShot >= 6) {
@@ -292,87 +322,76 @@
       }, 1000);
     }
 
+    // === Take a Photo and Store It ===
     function takePhoto() {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(video, 0, 0);
       const dataUrl = canvas.toDataURL('image/png');
 
-      if (shots[currentShot]) {
-        shots[currentShot].src = dataUrl;
-      }
+      if (shots[currentShot]) shots[currentShot].src = dataUrl;
 
       const img = new Image();
       img.src = dataUrl;
       capturedPhotos.push(img);
     }
 
+    // === End Photo Session, Show Choices ===
     function endPhotoSession() {
-      countdown.textContent = 'Click to select your 4 favorite photos';
-      const tracks = video.srcObject?.getTracks();
-      if (tracks) tracks.forEach(track => track.stop());
-
+      countdown.textContent = 'Choose your 4 favorite photos!';
+      video.srcObject.getTracks().forEach(track => track.stop());
       cameraSection.style.display = 'none';
       photoStrip.style.display = 'flex';
-      photoStrip.innerHTML = '';
-      selectedPhotos = [];
 
-      capturedPhotos.forEach((photo) => {
+      capturedPhotos.forEach(photo => {
         const clone = photo.cloneNode();
-        clone.classList.add('strip-photo', 'selectable');
-        clone.addEventListener('click', () => toggleSelectPhoto(clone));
-        photoStrip.appendChild(clone);
+        clone.classList.add('photo');
+        clone.addEventListener('click', () => {
+          if (chosenPhotos.includes(clone)) {
+            chosenPhotos = chosenPhotos.filter(p => p !== clone);
+            clone.classList.remove('chosen');
+          } else if (chosenPhotos.length < 4) {
+            chosenPhotos.push(clone);
+            clone.classList.add('chosen');
+          }
+          updateStripPreview();
+        });
+        choices.appendChild(clone);
       });
-
-      document.getElementById('selection-instructions').style.display = 'block';
-      document.getElementById('finalizeBtn').style.display = 'inline-block';
-      document.getElementById('resetBtn').style.display = 'inline-block';
     }
 
-    function toggleSelectPhoto(photo) {
-      if (selectedPhotos.includes(photo)) {
-        selectedPhotos = selectedPhotos.filter(p => p !== photo);
-        photo.classList.remove('selected');
-      } else {
-        if (selectedPhotos.length >= 4) {
-          alert('You can only select 4 photos.');
-          return;
-        }
-        selectedPhotos.push(photo);
-        photo.classList.add('selected');
-      }
+    // === Show Preview of Chosen Photos ===
+    function updateStripPreview() {
+      stripPreview.innerHTML = '';
+      chosenPhotos.forEach(photo => {
+        const clone = photo.cloneNode();
+        clone.classList.remove('chosen');
+        stripPreview.appendChild(clone);
+      });
     }
 
-    document.getElementById('finalizeBtn').addEventListener('click', () => {
-      if (selectedPhotos.length !== 4) {
-        alert('Please select exactly 4 photos.');
-        return;
-      }
-
-      countdown.textContent = 'Print your Receipt';
-      photoStrip.innerHTML = '';
-      photoStrip.style.display = 'flex';
-      photoStrip.style.flexDirection = 'column';
-      photoStrip.style.width = '260px';
-      photoStrip.style.height = '800px';
-
-      selectedPhotos.forEach(photo => {
-        const clone = photo.cloneNode();
-        clone.classList.remove('selectable', 'selected');
-        clone.classList.add('strip-photo');
-        photoStrip.appendChild(clone);
-      });
-
-      document.getElementById('selection-instructions').style.display = 'none';
-      document.getElementById('finalizeBtn').style.display = 'none';
-      document.getElementById('printBtn').style.display = 'inline-block';
+    // === Print the Photo Strip ===
+    printBtn.addEventListener('click', () => {
+      const printWindow = window.open('', '_blank');
+      const styles = `
+        <style>
+          body { text-align: center; font-family: 'VT323', monospace; margin: 0; }
+          img { width: 100%; max-width: 240px; margin: 5px auto; display: block; }
+        </style>`;
+      const content = chosenPhotos.map(photo => `<img src="${photo.src}" />`).join('');
+      printWindow.document.write(`<html><head>${styles}</head><body>${content}</body></html>`);
+      printWindow.document.close();
+      printWindow.print();
+      setTimeout(() => location.reload(), 1000); // Reload after print
     });
 
+    // === Print Access Codes (Developer Tool) ===
     function printCodes() {
       const printWindow = window.open('', '_blank');
       const styles = `
         <style>
-          body { font-family: monospace; text-align: center; padding: 20px; }
+          body { font-family: 'VT323', monospace; text-align: center; padding: 20px; }
+          h2 { margin-bottom: 20px; }
           ul { list-style: none; padding: 0; }
           li {
             margin: 10px 0;
@@ -380,29 +399,14 @@
             border: 1px dashed #444;
             padding: 10px;
             width: 200px;
-            margin: 0 auto;
+            margin-left: auto;
+            margin-right: auto;
           }
         </style>`;
       const codesHtml = validCodes.map(code => `<li>${code}</li>`).join('');
       printWindow.document.write(`<html><head>${styles}</head><body><h2>Access Codes</h2><ul>${codesHtml}</ul></body></html>`);
       printWindow.document.close();
       printWindow.print();
-    }
-
-    function printPhoto() {
-      const printWindow = window.open('', '_blank');
-      const style = `
-        <style>
-          body { text-align: center; font-family: sans-serif; }
-          img { width: 240px; margin: 10px auto; display: block; background: black; border: 1px solid #ccc; }
-        </style>`;
-      const images = Array.from(photoStrip.querySelectorAll('img')).map(img => `<img src="${img.src}" />`).join('');
-      printWindow.document.write(`<html><head>${style}</head><body>${images}</body></html>`);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-
-      setTimeout(() => location.reload(), 1000);
     }
   </script>
 </body>
