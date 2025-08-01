@@ -4,12 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Receipt Photobooth</title>
+  <!-- Designed & Programmed by: Prins Fatima L. Dimasangkay | BSIT 3A-->
 
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=VT323&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Libre+Barcode+128+Text&display=swap" rel="stylesheet">
 
-  <!-- CSS Styling -->
   <style>
     *, *::before, *::after {
       box-sizing: border-box;
@@ -34,7 +33,6 @@
       color: black;
     }
 
-    /* Screensaver */
     #screensaver {
       display: flex;
       flex-direction: column;
@@ -49,7 +47,6 @@
       50% { transform: translateY(-20px); }
     }
 
-    /* Buttons */
     button {
       padding: 10px 20px;
       margin: 10px 5px;
@@ -77,7 +74,7 @@
       opacity: 0;
     }
 
-    /* Photobooth Layout */
+    /* ito ay for the layout ng pb */
     .photobooth-container {
       display: none;
       flex-direction: row;
@@ -108,9 +105,10 @@
       font-size: 24px;
     }
 
-    /* Code Input Popup */
+    /* for the code pop-up this */
     #codeInputPopup {
       display: none;
+      font-size: 20px;
       flex-direction: column;
       align-items: center;
       justify-content: center;
@@ -134,7 +132,7 @@
       border-radius: 5px;
     }
 
-    /* Photo Strip Display */
+    /* for strip ng pb */
     .strip-photo {
       width: 240px;
       border: 1px solid #ccc;
@@ -151,7 +149,6 @@
       border: 2px solid #999;
     }
 
-    /* Barcode Title */
     .title-barcode {
       font-family: 'Libre Barcode 128 Text', cursive;
       font-size: 100px;
@@ -159,6 +156,7 @@
     }
 
     #title-barcode1 {
+      font-family: 'Libre Barcode 128 Text', cursive;
       font-size: 80px;
       margin-top: 10px;
       display: none;
@@ -169,7 +167,7 @@
       font-size: 30px;
     }
 
-    /* Selection */
+    /* for selection this */
     .selectable {
       cursor: pointer;
       transition: transform 0.2s, border 0.2s;
@@ -198,26 +196,29 @@
 </head>
 <body>
 
-  <!-- Screensaver -->
   <div id="screensaver">
     <h1 class="title-barcode">Receipt Photobooth</h1>
-    <p>Designed & Programmed by: Prins Fatima L. Dimasangkay</p>
+    <p>Designed & Programmed by: Prins Fatima L. Dimasangkay | BSIT 3A</p>
     <img src="prp.png" alt="Logo" id="prp">
     <button id="startBtn">📸 START 📃</button>
   </div>
 
-  <!-- Hidden Dev Button -->
+  <!-- pag need na the function -->
   <button id="hiddenBtn" onclick="printCodes()">Print Codes</button>
 
-  <!-- Code Entry Popup -->
+  <!-- code entry popup | put the function back pag need na-->
   <div id="codeInputPopup">
-    <p>Buy a Code for 25PHP from the Cashier</p>
-    <label for="codeInput">Enter the Code to Start:</label><br/>
-    <input type="text" id="codeInput" placeholder="Valid Code Only"><br/>
-    <button id="confirmBtn">CONFIRM</button>
+    <h1>HOW TO USE:</h1>
+    <p>1. 📸 Take shots for 6 times. 5 seconds each.</p>
+    <p>2. 🖼 Pick your 4 favorite pictures.</p>
+    <p>3. 🎫 Finalize your photostrip.</p>
+    <p>4. 🖨 Click print.</p>
+    <p>5. 🎟 Grab your memory.</p>
+    <!-- <label for="codeInput">Enter the Code to Start:</label><br/>
+    <input type="text" id="codeInput" placeholder="Valid Code Only"><br/> -->
+    <button id="confirmBtn">✅ CONFIRM</button>
   </div>
 
-  <!-- Titles, Countdown, Camera Section -->
   <h1 id="title-barcode1">Receipt Photobooth</h1>
   <div class="controls" id="countdown">Timer: 0s | Shot: 0/6</div>
 
@@ -235,16 +236,15 @@
     </div>
   </div>
 
-  <!-- Photo Strip Selection & Print -->
+  <!-- the photo strip selection & print -->
   <div id="selection-instructions"></div>
   <div id="photoStrip"></div>
   <button id="printBtn">🖨️ Print</button>
   <button id="finalizeBtn">✅ Finalize Strip</button>
 
-  <!-- Hidden Canvas -->
+  <!-- for the hidden canvas -->
   <canvas id="canvas" style="display:none;"></canvas>
 
-  <!-- JavaScript -->
   <script>
     const startBtn = document.getElementById('startBtn');
     const confirmBtn = document.getElementById('confirmBtn');
@@ -271,28 +271,25 @@
     let selectedPhotos = [];
     let currentShot = 0;
 
+    //for dev button
     document.addEventListener('keydown', e => {
       if (e.key.toLowerCase() === 'd') hiddenBtn.style.opacity = '1';
     });
 
     startBtn.addEventListener('click', () => {
       document.getElementById('screensaver').style.display = 'none';
-      codePopup.style.display = 'block';
+      codePopup.style.display = 'flex'; //ikaw lang pala salarin
     });
 
+    // pang call cam
     confirmBtn.addEventListener('click', async () => {
-      const input = codeInput.value.trim().toUpperCase();
-      if (validCodes.includes(input)) {
-        document.body.classList.add('active-mode');
+      document.body.classList.add('active-mode');
         codePopup.style.display = 'none';
         cameraSection.style.display = 'flex';
         await startCamera();
         startPhotoSequence();
         countdown.style.display = 'block';
         titleBarcode1.style.display = 'block';
-      } else {
-        alert('Invalid Code!');
-      }
     });
 
     async function startCamera() {
@@ -302,7 +299,7 @@
 
     function startPhotoSequence() {
       currentShot = 0;
-      let timer = 1;
+      let timer = 5; //set to 1 para sa testing
 
       const interval = setInterval(() => {
         countdown.textContent = `Timer: ${timer}s | Shot: ${currentShot}/6`;
@@ -311,7 +308,7 @@
         if (timer < 0) {
           takePhoto();
           currentShot++;
-          timer = 1;
+          timer = 5;
         }
 
         if (currentShot >= 6) {
